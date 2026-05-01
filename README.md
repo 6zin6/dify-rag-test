@@ -1,7 +1,7 @@
 # 社内RAGシステム (Dify × Next.js)
 
 Dify APIを活用した社内向けRAGシステムです。
-ナレッジをアップロードし、チャット画面で社内情報に基づいた回答を得られます。
+全社用、部署ごとに異なるナレッジをアップロードし、チャット画面で社内情報に基づいた回答を得られます。
 
 ## 技術スタック
 
@@ -36,10 +36,19 @@ cp .env.local.example .env.local
 `.env.local` を編集:
 
 ```env
-DIFY_API_BASE_URL=https://api.dify.ai/v1
-DIFY_APP_API_KEY=app-your-app-api-key-here
-DIFY_KNOWLEDGE_API_KEY=dataset-your-knowledge-api-key-here
-DIFY_DATASET_ID=your-dataset-id-here
+ DIFY_API_BASE_URL=https://api.dify.ai/v1                                                                                                                                                                
+                                                                                                                                                                                                          
+  DIFY_DEPT_COMPANY_APP_API_KEY=app-xxx                                                                                                                                                                   
+  DIFY_DEPT_COMPANY_KNOWLEDGE_API_KEY=dataset-xxx                                                                                                                                                         
+  DIFY_DEPT_COMPANY_DATASET_ID=xxx                                                                                                                                                                        
+                                                                                                                                                                                                          
+  DIFY_DEPT_SALES_APP_API_KEY=app-yyy                                                                                                                                                                     
+  DIFY_DEPT_SALES_KNOWLEDGE_API_KEY=dataset-yyy                                                                                                                                                           
+  DIFY_DEPT_SALES_DATASET_ID=yyy                                                                                                                                                                          
+   
+  DIFY_DEPT_FINANCE_APP_API_KEY=app-zzz                                                                                                                                                                   
+  DIFY_DEPT_FINANCE_KNOWLEDGE_API_KEY=dataset-zzz                                                                                                                                                       
+  DIFY_DEPT_FINANCE_DATASET_ID=zzz     
 ```
 
 ### 4. 開発サーバーの起動
