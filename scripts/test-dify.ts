@@ -31,7 +31,7 @@ async function main() {
   loadEnv();
 
   console.log("\n--- listDocuments() ---");
-  const result = await listDocuments(1, 20);
+  const result = await listDocuments(1, 20, "company");
 
   console.log(`✓ Success`);
   console.log(`  Total documents : ${result.total}`);

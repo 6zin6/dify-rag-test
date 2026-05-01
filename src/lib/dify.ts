@@ -1,3 +1,5 @@
+import { getDepartmentConfig, type DepartmentId } from "./departments";
+
 // ============================================================
 // Types
 // ============================================================
@@ -86,10 +88,11 @@ async function handleErrorResponse(res: Response): Promise<never> {
  * Intended to be piped directly through a Next.js API Route.
  */
 export async function sendChatMessageStream(
-  request: ChatRequest
+  request: ChatRequest,
+  departmentId: DepartmentId
 ): Promise<ReadableStream<Uint8Array>> {
   const baseUrl = getEnv("DIFY_API_BASE_URL");
-  const apiKey = getEnv("DIFY_APP_API_KEY");
+  const { appApiKey } = getDepartmentConfig(departmentId);
 
   const body: Record<string, unknown> = {
     query: request.query,
@@ -110,7 +113,7 @@ export async function sendChatMessageStream(
     res = await fetch(`${baseUrl}/chat-messages`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${appApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
@@ -140,11 +143,11 @@ export async function sendChatMessageStream(
  */
 export async function uploadDocument(
   file: File | Blob,
-  fileName: string
+  fileName: string,
+  departmentId: DepartmentId
 ): Promise<{ document: Document; batch: string }> {
   const baseUrl = getEnv("DIFY_API_BASE_URL");
-  const apiKey = getEnv("DIFY_KNOWLEDGE_API_KEY");
-  const datasetId = getEnv("DIFY_DATASET_ID");
+  const { knowledgeApiKey, datasetId } = getDepartmentConfig(departmentId);
 
   const form = new FormData();
   form.append("file", file, fileName);
@@ -167,7 +170,7 @@ export async function uploadDocument(
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${apiKey}`,
+          Authorization: `Bearer ${knowledgeApiKey}`,
         },
         body: form,
         signal: controller.signal,
@@ -193,11 +196,11 @@ export async function uploadDocument(
  */
 export async function listDocuments(
   page = 1,
-  limit = 20
+  limit = 20,
+  departmentId: DepartmentId
 ): Promise<DocumentListResponse> {
   const baseUrl = getEnv("DIFY_API_BASE_URL");
-  const apiKey = getEnv("DIFY_KNOWLEDGE_API_KEY");
-  const datasetId = getEnv("DIFY_DATASET_ID");
+  const { knowledgeApiKey, datasetId } = getDepartmentConfig(departmentId);
 
   const params = new URLSearchParams({
     page: String(page),
@@ -214,7 +217,7 @@ export async function listDocuments(
       {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${apiKey}`,
+          Authorization: `Bearer ${knowledgeApiKey}`,
         },
         signal: controller.signal,
       }
@@ -237,10 +240,12 @@ export async function listDocuments(
 /**
  * Deletes a document from the knowledge base by its ID.
  */
-export async function deleteDocument(documentId: string): Promise<void> {
+export async function deleteDocument(
+  documentId: string,
+  departmentId: DepartmentId
+): Promise<void> {
   const baseUrl = getEnv("DIFY_API_BASE_URL");
-  const apiKey = getEnv("DIFY_KNOWLEDGE_API_KEY");
-  const datasetId = getEnv("DIFY_DATASET_ID");
+  const { knowledgeApiKey, datasetId } = getDepartmentConfig(departmentId);
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 60_000);
@@ -252,7 +257,7 @@ export async function deleteDocument(documentId: string): Promise<void> {
       {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${apiKey}`,
+          Authorization: `Bearer ${knowledgeApiKey}`,
         },
         signal: controller.signal,
       }

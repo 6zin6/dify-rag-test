@@ -2,23 +2,42 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
+import { getDepartmentLabel } from '@/lib/departments';
+import { useDepartment } from '@/components/DepartmentProvider';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
 }
 
-const INITIAL_MESSAGE: Message = {
-  role: 'assistant',
-  content: 'こんにちは！社内情報について何でもお聞きください。',
-};
+function buildInitialMessage(label: string): Message {
+  return {
+    role: 'assistant',
+    content: `こんにちは！${label}のナレッジについて何でもお聞きください。`,
+  };
+}
 
 export default function ChatInterface() {
-  const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
+  const { department } = useDepartment();
+  const initialMessage = buildInitialMessage(getDepartmentLabel(department));
+
+  const [messages, setMessages] = useState<Message[]>([initialMessage]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | undefined>();
   const [error, setError] = useState<string | null>(null);
+
+  // Reset conversation state when the department changes — conversation_id
+  // belongs to a specific Dify app and is not portable between departments.
+  // Adjust state during render rather than in an effect.
+  // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+  const [prevDepartment, setPrevDepartment] = useState(department);
+  if (department !== prevDepartment) {
+    setPrevDepartment(department);
+    setMessages([initialMessage]);
+    setConversationId(undefined);
+    setError(null);
+  }
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -43,7 +62,7 @@ export default function ChatInterface() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: query, conversationId }),
+        body: JSON.stringify({ message: query, conversationId, department }),
       });
 
       if (!res.ok || !res.body) {
@@ -139,7 +158,7 @@ export default function ChatInterface() {
           >
             {/* Icon */}
             <div
-              className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+              className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
                 msg.role === 'user'
                   ? 'bg-blue-500 text-white'
                   : 'bg-gray-200 text-gray-600'
@@ -159,7 +178,7 @@ export default function ChatInterface() {
               {msg.content}
               {/* Blinking cursor while streaming */}
               {isLoading && i === messages.length - 1 && msg.role === 'assistant' && (
-                <span className="inline-block w-[2px] h-[1em] ml-0.5 bg-gray-500 align-middle animate-pulse">
+                <span className="inline-block w-0.5 h-[1em] ml-0.5 bg-gray-500 align-middle animate-pulse">
                   ▊
                 </span>
               )}
@@ -199,7 +218,7 @@ export default function ChatInterface() {
           <button
             onClick={sendMessage}
             disabled={!input.trim() || isLoading}
-            className="flex-shrink-0 h-[42px] px-4 rounded-xl bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="shrink-0 h-10.5 px-4 rounded-xl bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {isLoading ? '送信中...' : '送信'}
           </button>

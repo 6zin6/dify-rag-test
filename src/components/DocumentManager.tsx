@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Document } from '@/lib/dify';
+import { useDepartment } from '@/components/DepartmentProvider';
 
 const ACCEPTED_TYPES = ['.md', '.txt', '.pdf', '.docx'];
 const MAX_SIZE_BYTES = 15 * 1024 * 1024; // 15 MB
@@ -34,6 +35,8 @@ function formatDate(unixTs: number) {
 }
 
 export default function DocumentManager() {
+  const { department } = useDepartment();
+
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -56,7 +59,7 @@ export default function DocumentManager() {
       setIsLoading(true);
       setError(null);
       try {
-        const res = await fetch('/api/documents');
+        const res = await fetch(`/api/documents?department=${department}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = (await res.json()) as { data: Document[] };
         if (!cancelled) setDocuments(data.data);
@@ -69,7 +72,7 @@ export default function DocumentManager() {
 
     load();
     return () => { cancelled = true; };
-  }, [refreshKey]);
+  }, [refreshKey, department]);
 
   function validateFile(file: File): string | null {
     const ext = '.' + file.name.split('.').pop()?.toLowerCase();
@@ -95,6 +98,7 @@ export default function DocumentManager() {
 
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('department', department);
 
     const xhr = new XMLHttpRequest();
 
@@ -140,7 +144,10 @@ export default function DocumentManager() {
     if (!window.confirm(`「${doc.name}」を削除しますか？`)) return;
     setError(null);
     try {
-      const res = await fetch(`/api/documents/${doc.id}`, { method: 'DELETE' });
+      const res = await fetch(
+        `/api/documents/${doc.id}?department=${department}`,
+        { method: 'DELETE' }
+      );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       fetchDocuments();
     } catch {

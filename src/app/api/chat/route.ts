@@ -1,4 +1,5 @@
 import { sendChatMessageStream } from "@/lib/dify";
+import { DEFAULT_DEPARTMENT_ID, isDepartmentId } from "@/lib/departments";
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -20,18 +21,30 @@ export async function POST(request: Request) {
     );
   }
 
-  const { message, conversationId, user } = body as {
+  const { message, conversationId, user, department } = body as {
     message: string;
     conversationId?: string;
     user?: string;
+    department?: string;
   };
 
+  const departmentId = department ?? DEFAULT_DEPARTMENT_ID;
+  if (!isDepartmentId(departmentId)) {
+    return Response.json(
+      { error: "Invalid department" },
+      { status: 400 }
+    );
+  }
+
   try {
-    const stream = await sendChatMessageStream({
-      query: message,
-      user: user ?? "anonymous",
-      conversationId,
-    });
+    const stream = await sendChatMessageStream(
+      {
+        query: message,
+        user: user ?? "anonymous",
+        conversationId,
+      },
+      departmentId
+    );
 
     return new Response(stream, {
       headers: {
@@ -40,9 +53,10 @@ export async function POST(request: Request) {
         Connection: "keep-alive",
       },
     });
-  } catch {
+  } catch (err) {
+    console.error("[/api/chat POST] failed:", err);
     return Response.json(
-      { error: "Failed to communicate with the AI service" },
+      { error: err instanceof Error ? err.message : "Failed to communicate with the AI service" },
       { status: 500 }
     );
   }
